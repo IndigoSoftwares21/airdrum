@@ -1,0 +1,10 @@
+[ui]
+username = 22146432
+
+[paths]
+default = https://svn.eul.edu.tr/repo/precious22146432airdrumamoti_251
+
+[auth]
+eul.prefix = https://svn.eul.edu.tr/
+eul.username = 22146432
+eul.password = PAb3UQat
