@@ -9,6 +9,7 @@ CommManager comms;
 
 void setup() {
   Serial.begin(115200);
+  while (!Serial) delay(10);
   delay(1500);
 
   Serial.println("\n=== AIRDRUM SYSTEM START ===");
@@ -24,7 +25,7 @@ void loop() {
   float peak;
 
   if (hitDetector.update(peak)) {
-    Serial.print("🥁 HIT REGISTERED | peak=");
+    Serial.print("🥁 HIT! peak=");
     Serial.println(peak, 0);
 
     comms.sendHit(peak);
