@@ -8,14 +8,17 @@ extern IMUDriver imu;
 void HitDetector::begin() {
   state = DetectionState::IDLE;
   lastSampleUs = micros();
+  filteredAx = 0;
+  filteredAy = 0;
+  filteredAz = 0;
 }
 
 bool HitDetector::update(float &peakOut) {
   unsigned long nowUs = micros();
   unsigned long nowMs = millis();
   
-  // High frequency sampling (1kHz)
-  if (nowUs - lastSampleUs < 1000) {
+  // Throttle to 2kHz sample limit to leave CPU time for UDP and I2C (500us interval)
+  if (nowUs - lastSampleUs < 500) {
     return false;
   }
   lastSampleUs = nowUs;
@@ -23,42 +26,76 @@ bool HitDetector::update(float &peakOut) {
   int16_t ax, ay, az, gx, gy, gz;
   imu.readAll(ax, ay, az, gx, gy, gz);
 
-  // Jerk (change in acceleration) is best for detecting the "impact" of a mid-air stop
-  int16_t dx = ax - pax;
-  int16_t dy = ay - pay;
-  int16_t dz = az - paz;
+  // Convert to physical units: 8G scale (4096 LSB/G), 1000 DPS scale (32.8 LSB/DPS)
+  float rawAccelX = ax / 4096.0f;
+  float rawAccelY = ay / 4096.0f;
+  float rawAccelZ = az / 4096.0f;
   
-  pax = ax;
-  pay = ay;
-  paz = az;
+  float rawGyroX = gx / 32.8f;
+  float rawGyroY = gy / 32.8f;
+  float rawGyroZ = gz / 32.8f;
 
-  float jerkMag = sqrt((float)dx*dx + (float)dy*dy + (float)dz*dz);
-  float gyroMag = sqrt((float)gx*gx + (float)gy*gy + (float)gz*gz);
+  // 1. Exponential Moving Average Low-Pass Filter
+  if (filteredAx == 0 && filteredAy == 0 && filteredAz == 0) {
+    // Seed the filter on first read with raw values
+    filteredAx = rawAccelX;
+    filteredAy = rawAccelY;
+    filteredAz = rawAccelZ;
+  } else {
+    filteredAx = filteredAx * (1.0f - LPF_ALPHA) + rawAccelX * LPF_ALPHA;
+    filteredAy = filteredAy * (1.0f - LPF_ALPHA) + rawAccelY * LPF_ALPHA;
+    filteredAz = filteredAz * (1.0f - LPF_ALPHA) + rawAccelZ * LPF_ALPHA;
+  }
 
+  // 2. Physics Model
+  // Magnitude of the filtered acceleration vector (always ~1.0G at rest)
+  float totalAccel = sqrt(filteredAx*filteredAx + filteredAy*filteredAy + filteredAz*filteredAz);
+  float dynamicAccel = abs(totalAccel - 1.0f); // Strip gravity out
+
+  // Magnitude of the gyro vector
+  float gyroMag = sqrt(rawGyroX*rawGyroX + rawGyroY*rawGyroY + rawGyroZ*rawGyroZ);
+
+  // 3. State Machine
   switch (state) {
     case DetectionState::IDLE:
-      // Trigger when we see a sharp change in movement (jerk) while swinging (gyro)
-      if (jerkMag > IMPACT_GATE && gyroMag > GYRO_GATE) {
-        state = DetectionState::TRACKING;
+      // Look for a fast swing motion (pre-impact)
+      if (gyroMag > SWING_GYRO_GATE) {
+        state = DetectionState::SWINGING;
         windowStartUs = nowUs;
-        peakVal = jerkMag;
       }
       break;
 
-    case DetectionState::TRACKING:
-      if (jerkMag > peakVal) {
-        peakVal = jerkMag;
+    case DetectionState::SWINGING:
+      // In swing, we expect a sudden acceleration spike when arriving at impact
+      if (dynamicAccel > IMPACT_ACCEL_GATE) {
+        state = DetectionState::IMPACT_TRACKING;
+        windowStartUs = nowUs;
+        peakVal = dynamicAccel;
+      } 
+      // Timeout if they swung but missed / didn't stop hard enough
+      else if ((nowUs - windowStartUs) / 1000 > 250) {
+        state = DetectionState::IDLE;
+      }
+      break;
+
+    case DetectionState::IMPACT_TRACKING:
+      // Track the hardest point of the hit during a small 25ms window
+      if (dynamicAccel > peakVal) {
+        peakVal = dynamicAccel;
       }
       
       if ((nowUs - windowStartUs) / 1000 >= PEAK_WINDOW_MS) {
-        if (peakVal >= PEAK_MIN) {
-          peakOut = peakVal;
-          lastHitMs = nowMs;
-          state = DetectionState::COOLDOWN;
-          return true;
-        } else {
-          state = DetectionState::IDLE;
-        }
+        // We found the peak of the impact!
+        // We output a "MIDI-friendly" 0-127 integer mapped from the G-forces
+        // Minimum hit (IMPACT_ACCEL_GATE) maps to low velocity, e.g. 2.5G -> ~30
+        // Huge hit maps to ~127
+        float rawVelocity = (peakVal / IMPACT_ACCEL_GATE) * 40.0f; 
+        if (rawVelocity > 127.0f) rawVelocity = 127.0f;
+        
+        peakOut = rawVelocity;
+        lastHitMs = nowMs;
+        state = DetectionState::COOLDOWN;
+        return true;
       }
       break;
 

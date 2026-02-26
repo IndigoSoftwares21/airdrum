@@ -3,7 +3,8 @@
 
 enum class DetectionState {
   IDLE,
-  TRACKING,
+  SWINGING,
+  IMPACT_TRACKING,
   COOLDOWN
 };
 
@@ -13,7 +14,7 @@ public:
   bool update(float &peakOut);
 
 private:
-  int16_t pax = 0, pay = 0, paz = 0;
+  float filteredAx = 0, filteredAy = 0, filteredAz = 0;
   float peakVal = 0;
   unsigned long lastSampleUs = 0;
   unsigned long windowStartUs = 0;

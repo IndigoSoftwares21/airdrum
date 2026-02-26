@@ -5,7 +5,7 @@
 
 void IMUDriver::begin() {
   Wire.begin(SDA_PIN, SCL_PIN);
-  Wire.setClock(100000); // 100kHz Standard-ish
+  Wire.setClock(400000); // 400kHz Fast I2C for higher sampling rate
   delay(300);
 
   // Wake IMU

@@ -1,1 +1,1 @@
-Setup firmware and flutter
+added ui setup and comms for wifi, ignored build and git files
