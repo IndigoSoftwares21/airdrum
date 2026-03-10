@@ -1,1 +1,1 @@
-added ui setup and comms for wifi, ignored build and git files
+Enhance hit detection with IMU physics, LPF, and strict timing

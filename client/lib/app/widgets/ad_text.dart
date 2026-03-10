@@ -146,9 +146,11 @@ class AdText extends StatelessWidget {
         style = textTheme.labelMedium;
         break;
       case AdTextType.monospace:
-        style = textTheme.bodyMedium?.copyWith(fontFamily: 'monospace');
+        style = textTheme.bodyMedium;
         break;
     }
+
+    style = style?.copyWith(fontFamily: 'monospace');
 
     if (color != null || fontWeight != null) {
       style = style?.copyWith(color: color, fontWeight: fontWeight);

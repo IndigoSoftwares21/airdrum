@@ -1,12 +1,21 @@
 import 'dart:async';
 import 'package:get/get.dart';
 import '../../../data/services/udp_service.dart';
+import '../../../data/managers/audio_manager.dart';
+import '../../../data/models/hit_event.dart';
 import '../../../utils/logger.dart';
 
 class HomeController extends GetxController {
   final UdpService _udpService = Get.find<UdpService>();
+  final AudioManager _audioManager = Get.find<AudioManager>();
 
   final RxList<String> logs = <String>[].obs;
+
+  // Navigation rail index tracking
+  final RxInt selectedIndex = 0.obs;
+
+  // Visual feedback tracking
+  final Rx<HitEvent?> lastHitEvent = Rx<HitEvent?>(null);
 
   final RxBool leftConnected = false.obs;
   final RxBool rightConnected = false.obs;
@@ -46,8 +55,20 @@ class HomeController extends GetxController {
       }
     }
 
-    // Add message to logs list
-    _addLog(message);
+    if (message.contains('HIT')) {
+      try {
+        final hitEvent = HitEvent.fromString(message);
+        lastHitEvent.value = hitEvent; // Trigger frontend visualizer
+        _audioManager.handleHit(hitEvent);
+      } catch (e) {
+        Log.error('Failed to parse hit event', e);
+      }
+    }
+
+    // Add message to logs list only if it's NOT a heartbeat message
+    if (!message.contains('HEARTBEAT')) {
+      _addLog(message);
+    }
   }
 
   void _addLog(String message) {

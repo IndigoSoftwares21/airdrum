@@ -7,7 +7,7 @@
 class CommManager {
 public:
   void begin();
-  void sendHit(float peak);
+  void sendHit(float peak, float angle);
   void sendLog(const char* msg);
   
 private:

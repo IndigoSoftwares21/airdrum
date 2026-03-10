@@ -30,15 +30,10 @@ unsigned long lastHeartbeatTime = 0;
 
 void loop() {
   float peak;
+  float angle;
 
-  if (hitDetector.update(peak)) {
-    Serial.print("🥁 HIT! peak=");
-    Serial.println(peak, 0);
-
-    String hitLog = String(STICK_ID) + " 🥁 HIT! peak=" + String(peak, 0);
-    comms.sendLog(hitLog.c_str());
-
-    comms.sendHit(peak);
+  if (hitDetector.update(peak, angle)) {
+    comms.sendHit(peak, angle);
   }
 
   if (millis() - lastHeartbeatTime >= 1000) {

@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'dart:convert';
 import 'dart:async';
 import '../../utils/logger.dart';
+import '../../modules/settings/controllers/settings_controller.dart';
 
 class UdpService extends GetxService {
   RawDatagramSocket? _socket;
@@ -20,7 +21,8 @@ class UdpService extends GetxService {
 
   Future<void> _initUdp() async {
     try {
-      _socket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 5000);
+      int port = Get.find<SettingsController>().udpPort.value;
+      _socket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, port);
       _socket?.listen((RawSocketEvent event) {
         if (event == RawSocketEvent.read) {
           Datagram? datagram = _socket?.receive();
@@ -30,7 +32,7 @@ class UdpService extends GetxService {
           }
         }
       });
-      Log.success('✅ UDP Service listening on port 5000', 'UDP');
+      Log.success('✅ UDP Service listening on port $port', 'UDP');
     } catch (e, stackTrace) {
       Log.error('❌ Failed to start UDP Service: $e', e, stackTrace);
     }

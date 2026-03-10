@@ -11,9 +11,10 @@ void HitDetector::begin() {
   filteredAx = 0;
   filteredAy = 0;
   filteredAz = 0;
+  currentYaw = 0;
 }
 
-bool HitDetector::update(float &peakOut) {
+bool HitDetector::update(float &peakOut, float &angleOut) {
   unsigned long nowUs = micros();
   unsigned long nowMs = millis();
   
@@ -21,6 +22,7 @@ bool HitDetector::update(float &peakOut) {
   if (nowUs - lastSampleUs < 500) {
     return false;
   }
+  float dt = (nowUs - lastSampleUs) / 1000000.0f;
   lastSampleUs = nowUs;
 
   int16_t ax, ay, az, gx, gy, gz;
@@ -47,6 +49,13 @@ bool HitDetector::update(float &peakOut) {
     filteredAz = filteredAz * (1.0f - LPF_ALPHA) + rawAccelZ * LPF_ALPHA;
   }
 
+  // Track Yaw (Heading) for the Piano slice mapping
+  // We use a small deadzone to stop resting drift
+  if (abs(rawGyroZ) > 1.5f) {
+    // Invert if necessary, typical rotation maps straight addition
+    currentYaw += rawGyroZ * dt;
+  }
+  
   // 2. Physics Model
   // Magnitude of the filtered acceleration vector (always ~1.0G at rest)
   float totalAccel = sqrt(filteredAx*filteredAx + filteredAy*filteredAy + filteredAz*filteredAz);
@@ -93,6 +102,7 @@ bool HitDetector::update(float &peakOut) {
         if (rawVelocity > 127.0f) rawVelocity = 127.0f;
         
         peakOut = rawVelocity;
+        angleOut = currentYaw; // Lock the angle at the exact moment of peak impact
         lastHitMs = nowMs;
         state = DetectionState::COOLDOWN;
         return true;

@@ -27,10 +27,12 @@ void CommManager::sendLog(const char* msg) {
   }
 }
 
-void CommManager::sendHit(float peak) {
-  Serial.print("[COMMS] HIT peak=");
-  Serial.println(peak, 0);
+void CommManager::sendHit(float peak, float angle) {
+  Serial.print("🥁 HIT! peak=");
+  Serial.print(peak, 0);
+  Serial.print(" angle=");
+  Serial.println(angle, 0);
 
-  String str = String(STICK_ID) + " [COMMS] HIT peak=" + String(peak, 0);
+  String str = String(STICK_ID) + " HIT peak=" + String(peak, 0) + " angle=" + String(angle, 0);
   sendLog(str.c_str());
 }
