@@ -1,22 +1,24 @@
 #include "CommManager.h"
 
-void CommManager::begin() {
-  connectWiFi();
+void CommManager::begin(FeedbackManager& feedback) {
+  connectWiFi(feedback);
 }
 
-void CommManager::connectWiFi() {
+void CommManager::connectWiFi(FeedbackManager& feedback) {
+  feedback.setState(StickState::BOOTING);
   Serial.print("Connecting to WiFi");
   WiFi.begin(WIFI_SSID, WIFI_PASS);
   while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
+    feedback.tick(); // Keep LED blinking while we block on WiFi
+    delay(100);
     Serial.print(".");
   }
   Serial.println("\nWiFi connected.");
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
-  
+
   udp.begin(UDP_PORT);
-  Serial.println("UDP log forwarder started.");
+  feedback.setState(StickState::STANDBY);
 }
 
 void CommManager::sendLog(const char* msg) {
@@ -27,12 +29,12 @@ void CommManager::sendLog(const char* msg) {
   }
 }
 
-void CommManager::sendHit(float peak, float angle) {
-  Serial.print("🥁 HIT! peak=");
+void CommManager::sendHit(float peak, float angle, FeedbackManager& feedback) {
+  Serial.print("HIT peak=");
   Serial.print(peak, 0);
   Serial.print(" angle=");
   Serial.println(angle, 0);
-
   String str = String(STICK_ID) + " HIT peak=" + String(peak, 0) + " angle=" + String(angle, 0);
   sendLog(str.c_str());
+  feedback.onHit();
 }

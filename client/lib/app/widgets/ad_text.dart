@@ -150,10 +150,11 @@ class AdText extends StatelessWidget {
         break;
     }
 
-    style = style?.copyWith(fontFamily: 'monospace');
-
-    if (color != null || fontWeight != null) {
-      style = style?.copyWith(color: color, fontWeight: fontWeight);
+    // Use the theme's font family instead of hardcoded monospace
+    style = style?.copyWith(fontWeight: fontWeight);
+    
+    if (color != null) {
+      style = style?.copyWith(color: color);
     }
 
     return Text(

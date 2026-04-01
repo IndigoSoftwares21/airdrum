@@ -1,1 +1,1 @@
-Enhance hit detection with IMU physics, LPF, and strict timing
+Modernize UI, refactor to sidebar architecture, and implement manual instrument controls

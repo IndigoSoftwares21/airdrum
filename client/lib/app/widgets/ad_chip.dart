@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'ad_text.dart';
+import 'pulse_dot.dart';
 
 class AdStatusChip extends StatelessWidget {
   final String label;
@@ -15,72 +16,40 @@ class AdStatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Pure Material 3 InputChip styling
     final avatarWidget = isConnected
-        ? const _PulseDot()
+        ? const PulseDot()
         : Icon(
             Icons.error_outline,
-            size: 16,
+            size: 14,
             color: Theme.of(context).colorScheme.error,
           );
 
-    return InputChip(
-      onPressed: () {}, // No-op, just to keep the M3 interactive styling
-      avatar: isTrailing ? null : avatarWidget,
-      deleteIcon: isTrailing ? avatarWidget : null,
-      onDeleted: isTrailing ? () {} : null, // Required to show deleteIcon
-      label: AdText.label(label),
-    );
-  }
-}
-
-class _PulseDot extends StatefulWidget {
-  const _PulseDot();
-
-  @override
-  State<_PulseDot> createState() => _PulseDotState();
-}
-
-class _PulseDotState extends State<_PulseDot>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 1),
-    )..repeat(reverse: true);
-
-    _animation = Tween<double>(begin: 0.5, end: 1.0).animate(_controller);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: _animation,
-      child: Container(
-        width: 10,
-        height: 10,
-        decoration: BoxDecoration(
-          color: Colors.greenAccent.shade400,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.greenAccent.withOpacity(0.6),
-              blurRadius: 6,
-              spreadRadius: 2,
-            ),
-          ],
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.secondary,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
         ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (!isTrailing) ...[
+            avatarWidget,
+            const SizedBox(width: 8),
+          ],
+          AdText.label(
+            label,
+            fontWeight: FontWeight.w600,
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+          ),
+          if (isTrailing) ...[
+            const SizedBox(width: 8),
+            avatarWidget,
+          ],
+        ],
       ),
     );
   }

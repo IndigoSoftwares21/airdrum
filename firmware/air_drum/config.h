@@ -15,6 +15,6 @@
 // Networking & UDP
 #define WIFI_SSID "BATMAN"
 #define WIFI_PASS "spiderman"
-#define HOST_IP "192.168.0.106"  // User configurable Desktop IP
+#define HOST_IP "192.168.0.105"  // User configurable Desktop IP
 #define UDP_PORT 5000
-#define STICK_ID "[LEFT]"        // Network identity prefix ([LEFT] or [RIGHT])
+#define STICK_ID "[RIGHT]"        // Network identity prefix ([LEFT] or [RIGHT])

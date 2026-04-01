@@ -65,6 +65,7 @@ flutter:
     - assets/piano-keys/Octave-3/
     - assets/piano-keys/Octave-4/
     - assets/piano-keys/Octave-5/
+    - assets/drums/set-1/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

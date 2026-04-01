@@ -3,14 +3,15 @@
 #include <WiFi.h>
 #include <WiFiUdp.h>
 #include "config.h"
+#include "FeedbackManager.h"
 
 class CommManager {
 public:
-  void begin();
-  void sendHit(float peak, float angle);
+  void begin(FeedbackManager& feedback);
+  void sendHit(float peak, float angle, FeedbackManager& feedback);
   void sendLog(const char* msg);
   
 private:
   WiFiUDP udp;
-  void connectWiFi();
+  void connectWiFi(FeedbackManager& feedback);
 };

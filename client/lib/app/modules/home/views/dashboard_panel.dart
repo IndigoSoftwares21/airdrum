@@ -29,19 +29,19 @@ class DashboardPanel extends StatelessWidget {
     AudioManager audioManager,
   ) {
     return Container(
-      color: Theme.of(context).colorScheme.surface,
+      color: Theme.of(context).scaffoldBackgroundColor,
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             AdText.label(
               'SWING TO PLAY',
-              fontWeight: FontWeight.w400,
+              fontWeight: FontWeight.w500,
               color: Theme.of(
                 context,
-              ).colorScheme.onSurfaceVariant.withOpacity(0.5),
+              ).colorScheme.onSurface.withOpacity(0.3),
             ),
-            const SizedBox(height: 48),
+            const SizedBox(height: 64),
             // Live Hit Visualizer
             Obx(() {
               final hitEvent = controller.lastHitEvent.value;
@@ -50,28 +50,42 @@ class DashboardPanel extends StatelessWidget {
               }
 
               return TweenAnimationBuilder<double>(
-                key: ValueKey(hitEvent.hashCode), // Re-trigger on new hit
+                key: ValueKey(hitEvent.hashCode),
                 tween: Tween(begin: 1.0, end: 0.0),
-                duration: const Duration(milliseconds: 600),
-                curve: Curves.easeOutQuad,
+                duration: const Duration(milliseconds: 500),
+                curve: Curves.easeOutCubic,
                 builder: (context, value, child) {
-                  return Transform.scale(
-                    scale: 1.0 + (value * (hitEvent.peak / 127.0) * 0.5),
-                    child: Opacity(
-                      opacity: value.clamp(0.0, 1.0),
-                      child: Container(
-                        width: 200,
-                        height: 200,
+                  return Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      // Outer Glowing Ring
+                      Container(
+                        width: 180 + (40 * value),
+                        height: 180 + (40 * value),
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Theme.of(context).colorScheme.primaryContainer,
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.primary.withOpacity(0.3 * value),
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                      // Core Circle
+                      Container(
+                        width: 180,
+                        height: 180,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Theme.of(context).colorScheme.surface,
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.primary.withOpacity(value),
+                            width: 1.5,
+                          ),
                           boxShadow: [
                             BoxShadow(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.primary.withOpacity(0.5 * value),
-                              blurRadius: 40 * value,
-                              spreadRadius: 20 * value,
+                              color: Theme.of(context).colorScheme.primary.withOpacity(0.2 * value),
+                              blurRadius: 20 * value,
+                              spreadRadius: 2 * value,
                             ),
                           ],
                         ),
@@ -81,21 +95,20 @@ class DashboardPanel extends StatelessWidget {
                             children: [
                               AdText.headline(
                                 hitEvent.deviceId,
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onPrimaryContainer,
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.onSurface,
                               ),
+                              const SizedBox(height: 4),
                               AdText.label(
-                                'Peak: ${hitEvent.peak.toStringAsFixed(0)}',
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onPrimaryContainer,
+                                'PEAK: ${hitEvent.peak.toStringAsFixed(0)}',
+                                color: Theme.of(context).colorScheme.primary.withOpacity(0.8),
+                                fontWeight: FontWeight.w600,
                               ),
                             ],
                           ),
                         ),
                       ),
-                    ),
+                    ],
                   );
                 },
               );

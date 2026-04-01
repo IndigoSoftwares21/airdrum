@@ -71,11 +71,6 @@ class AdButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Color? foregroundColor;
-    if (isDestructive) {
-      foregroundColor = Theme.of(context).colorScheme.error;
-    }
-
     Widget child;
     if (icon != null) {
       child = Row(
@@ -90,30 +85,35 @@ class AdButton extends StatelessWidget {
       case AdButtonType.filled:
         return FilledButton(
           onPressed: onPressed,
-          style: isDestructive
-              ? FilledButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.errorContainer,
-                  foregroundColor: Theme.of(
-                    context,
-                  ).colorScheme.onErrorContainer,
-                )
-              : null,
+          style: FilledButton.styleFrom(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            splashFactory: NoSplash.splashFactory,
+            backgroundColor: isDestructive ? Theme.of(context).colorScheme.error : null,
+            foregroundColor: isDestructive ? Theme.of(context).colorScheme.onError : null,
+          ),
           child: child,
         );
       case AdButtonType.outlined:
         return OutlinedButton(
           onPressed: onPressed,
-          style: isDestructive
-              ? OutlinedButton.styleFrom(foregroundColor: foregroundColor)
-              : null,
+          style: OutlinedButton.styleFrom(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            splashFactory: NoSplash.splashFactory,
+            side: isDestructive
+                ? BorderSide(color: Theme.of(context).colorScheme.error)
+                : null,
+            foregroundColor: isDestructive ? Theme.of(context).colorScheme.error : null,
+          ),
           child: child,
         );
       case AdButtonType.text:
         return TextButton(
           onPressed: onPressed,
-          style: isDestructive
-              ? TextButton.styleFrom(foregroundColor: foregroundColor)
-              : null,
+          style: TextButton.styleFrom(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            splashFactory: NoSplash.splashFactory,
+            foregroundColor: isDestructive ? Theme.of(context).colorScheme.error : null,
+          ),
           child: child,
         );
     }
