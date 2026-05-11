@@ -47,5 +47,6 @@ void loop() {
     comms.sendLog(STICK_ID " HEARTBEAT");
   }
 
+  comms.update(); // Keep OTA and WebServer alive
   feedback.tick();
 }

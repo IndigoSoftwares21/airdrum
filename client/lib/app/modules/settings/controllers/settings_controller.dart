@@ -16,7 +16,7 @@ class SettingsController extends GetxController {
   final RxBool isDarkMode = true.obs;
 
   // Future global settings (dark mode, UDP port, IP config)
-  final RxInt udpPort = 5000.obs;
+  final RxInt udpPort = 8000.obs;
   final RxDouble minIntensity = 5.0.obs;
 
   void toggleDarkMode(bool value) {

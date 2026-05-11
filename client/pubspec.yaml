@@ -36,6 +36,9 @@ dependencies:
   cupertino_icons: ^1.0.8
   get: ^4.7.3
   audioplayers: ^6.5.1
+  flutter_blue_plus: ^1.31.0
+  permission_handler: ^11.3.1
+  network_info_plus: ^8.1.0
 
 dev_dependencies:
   flutter_test:
