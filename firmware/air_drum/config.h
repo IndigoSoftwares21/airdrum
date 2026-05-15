@@ -1,9 +1,14 @@
 #pragma once
 
 // I2C Pins
-#define SDA_PIN 9
-#define SCL_PIN 10
+#define SDA_PIN 8
+#define SCL_PIN 9
 #define MPU_ADDR 0x68
+
+// Push Buttons
+#define BTN_NEXT_PIN 1
+#define BTN_PREV_PIN 2
+#define BTN_MODE_PIN 7
 
 // Airdrum Tuning (8g / 1000dps range)
 #define LPF_ALPHA 0.4             // Low-pass filter smoothing factor (0.0 to 1.0)

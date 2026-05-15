@@ -207,7 +207,27 @@ void CommManager::sendLog(const char* msg) {
 }
 
 void CommManager::sendHit(float peak, float angle, FeedbackManager& feedback) {
-  String str = String(STICK_ID) + " HIT peak=" + String(peak, 0) + " angle=" + String(angle, 0);
+  String str = String(STICK_ID) + " HIT kit=" + String(_kitIndex) + " mode=" + String(_modeIndex) + " peak=" + String(peak, 0) + " angle=" + String(angle, 0);
   sendLog(str.c_str());
   feedback.onHit();
+}
+
+void CommManager::nextKit() {
+  _kitIndex++;
+  if (_kitIndex > 9) _kitIndex = 0; // Support up to 10 kits
+  String msg = String(STICK_ID) + " KIT_CHANGE=" + String(_kitIndex);
+  sendLog(msg.c_str());
+}
+
+void CommManager::prevKit() {
+  _kitIndex--;
+  if (_kitIndex < 0) _kitIndex = 9;
+  String msg = String(STICK_ID) + " KIT_CHANGE=" + String(_kitIndex);
+  sendLog(msg.c_str());
+}
+
+void CommManager::toggleMode() {
+  _modeIndex = (_modeIndex == 0) ? 1 : 0;
+  String msg = String(STICK_ID) + " MODE_CHANGE=" + String(_modeIndex);
+  sendLog(msg.c_str());
 }

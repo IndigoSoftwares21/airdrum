@@ -24,6 +24,12 @@ public:
   void sendHit(float peak, float angle, FeedbackManager& feedback);
   void sendLog(const char* msg);
 
+  void nextKit();
+  void prevKit();
+  void toggleMode();
+  int  getKit()  { return _kitIndex; }
+  int  getMode() { return _modeIndex; }
+
   // BLE callback — called when Flutter writes credentials
   void onWrite(BLECharacteristic* pChar) override;
 
@@ -37,6 +43,8 @@ private:
   String _wifiPass;
   String _hostIp;
   bool   _portalMode = false;
+  int    _kitIndex   = 0;
+  int    _modeIndex  = 0; // 0: DRUM, 1: PIANO
 
   void loadSettings();
   void saveSettings(String ssid, String pass, String ip);

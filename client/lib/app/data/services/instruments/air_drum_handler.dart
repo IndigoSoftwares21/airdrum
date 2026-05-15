@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../interfaces/instrument_handler.dart';
 import '../../models/hit_event.dart';
 import '../../../modules/settings/controllers/settings_controller.dart';
+import '../../../utils/logger.dart';
 
 class AirDrumHandler implements InstrumentHandler {
   final RxString selectedKit = 'set-1'.obs;
@@ -72,5 +73,19 @@ class AirDrumHandler implements InstrumentHandler {
 
   void setKit(String kitName) {
     if (availableKits.contains(kitName)) selectedKit.value = kitName;
+  }
+
+  void setKitByIndex(int index) {
+    // We map hardware index (0-9) to available sets
+    // If we only have set-1, we use that, but logic supports more.
+    String kitName = 'set-$index';
+    
+    // Fallback: if kit doesn't exist, use set-1
+    if (index == 0) kitName = 'set-1'; 
+    
+    if (selectedKit.value != kitName) {
+      selectedKit.value = kitName;
+      Log.info('Switched drum kit to: $kitName', 'AirDrumHandler');
+    }
   }
 }

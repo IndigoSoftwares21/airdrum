@@ -1,15 +1,15 @@
 #pragma once
 #include <Arduino.h>
 
-#define LED_R_PIN  5
-#define LED_G_PIN  6
-#define LED_B_PIN  7
+#define LED_R_PIN  4
+#define LED_G_PIN  5
+#define LED_B_PIN  6
 
 #define VIBE_PIN      3
 #define VIBE_PWM_FREQ 1000
 #define VIBE_PWM_RES  8
 #define VIBE_STRENGTH 220
-#define VIBE_PULSE_MS 60
+#define VIBE_PULSE_MS 30
 
 #define HIT_FLASH_MS  80
 #define BLINK_MS      250

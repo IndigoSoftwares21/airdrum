@@ -21,6 +21,10 @@ void setup() {
   hitDetector.begin();
   comms.begin(feedback);
 
+  pinMode(BTN_NEXT_PIN, INPUT_PULLUP);
+  pinMode(BTN_PREV_PIN, INPUT_PULLUP);
+  pinMode(BTN_MODE_PIN, INPUT_PULLUP);
+
   String readyLog = String(STICK_ID) + " AirDrum ready";
   comms.sendLog(readyLog.c_str());
 
@@ -45,6 +49,23 @@ void loop() {
   if (millis() - lastHeartbeatTime >= 1000) {
     lastHeartbeatTime = millis();
     comms.sendLog(STICK_ID " HEARTBEAT");
+  }
+
+  // --- Button Polling ---
+  static unsigned long lastBtnTime = 0;
+  if (millis() - lastBtnTime > 200) { // 200ms debounce
+    if (digitalRead(BTN_NEXT_PIN) == LOW) {
+      comms.nextKit();
+      lastBtnTime = millis();
+    }
+    else if (digitalRead(BTN_PREV_PIN) == LOW) {
+      comms.prevKit();
+      lastBtnTime = millis();
+    }
+    else if (digitalRead(BTN_MODE_PIN) == LOW) {
+      comms.toggleMode();
+      lastBtnTime = millis();
+    }
   }
 
   comms.update(); // Keep OTA and WebServer alive

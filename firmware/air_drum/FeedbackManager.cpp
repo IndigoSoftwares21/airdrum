@@ -4,8 +4,8 @@ void FeedbackManager::begin() {
   pinMode(LED_R_PIN, OUTPUT);
   pinMode(LED_G_PIN, OUTPUT);
   pinMode(LED_B_PIN, OUTPUT);
-  ledcAttach(VIBE_PIN, VIBE_PWM_FREQ, VIBE_PWM_RES);
-  ledcWrite(VIBE_PIN, 0);
+  pinMode(VIBE_PIN, OUTPUT);
+  digitalWrite(VIBE_PIN, LOW);
   _setRGB(false, false, false);
 }
 
@@ -31,17 +31,21 @@ void FeedbackManager::tick() {
     _blinkOn = false;
   }
 
-  if (now >= _vibeEnd) {
+  if (_vibeEnd > 0 && now >= _vibeEnd) {
     _setVibe(false);
+    _vibeEnd = 0;
   }
 
   if ((_state == StickState::BOOTING || _state == StickState::STANDBY)
       && now - _lastBlink >= BLINK_MS) {
     _lastBlink = now;
     _blinkOn = !_blinkOn;
-    _state == StickState::BOOTING
-      ? _setRGB(_blinkOn, false, false)
-      : _setRGB(_blinkOn, _blinkOn, false);
+    
+    if (_state == StickState::BOOTING) {
+      _setRGB(_blinkOn, false, false); // Blinking Red
+    } else {
+      _setRGB(_blinkOn, _blinkOn, false); // Blinking Yellow
+    }
   }
 }
 
@@ -52,5 +56,5 @@ void FeedbackManager::_setRGB(bool r, bool g, bool b) {
 }
 
 void FeedbackManager::_setVibe(bool on) {
-  ledcWrite(VIBE_PIN, on ? VIBE_STRENGTH : 0);
+  digitalWrite(VIBE_PIN, on ? HIGH : LOW);
 }

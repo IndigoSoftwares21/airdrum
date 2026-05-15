@@ -65,6 +65,30 @@ class HomeController extends GetxController {
       }
     }
 
+    // --- Hardware Button Sync ---
+    if (message.contains('MODE_CHANGE=')) {
+      final modeStr = message.split('MODE_CHANGE=').last;
+      final modeIndex = int.tryParse(modeStr) ?? 0;
+      final targetInstrument = (modeIndex == 0) ? 'Drums' : 'Piano';
+      _audioManager.switchToInstrument(targetInstrument);
+      Log.info('Hardware sync: Switched to $targetInstrument', 'HomeController');
+    }
+
+    if (message.contains('KIT_CHANGE=')) {
+      final kitStr = message.split('KIT_CHANGE=').last;
+      final kitIndex = int.tryParse(kitStr) ?? 0;
+      // We only switch kit if we are already in Drum mode
+      if (_audioManager.activeInstrumentName.value == 'Drums') {
+        _audioManager.handleHit(HitEvent(
+          deviceId: message.contains('[LEFT]') ? '[LEFT]' : '[RIGHT]',
+          peak: 0, // Mock hit to trigger kit update
+          angle: 0,
+          kit: kitIndex,
+          mode: 0,
+        ));
+      }
+    }
+
     // Add message to logs list only if it's NOT a heartbeat message
     if (!message.contains('HEARTBEAT')) {
       _addLog(message);

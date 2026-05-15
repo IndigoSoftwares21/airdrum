@@ -56,6 +56,11 @@ class AudioManager extends GetxService {
   }
 
   void handleHit(HitEvent event) {
+    // Only handle kit switching if we are already in Drum mode
+    if (activeInstrumentName.value == 'Drums' && _activeInstrument is AirDrumHandler) {
+      (_activeInstrument as AirDrumHandler).setKitByIndex(event.kit);
+    }
+
     _activeInstrument?.processHit(event);
   }
 

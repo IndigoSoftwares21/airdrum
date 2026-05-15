@@ -1,0 +1,600 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Air Drum – Proto Board (ESP32-S3 Zero)</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background: #111;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 20px;
+        font-family: "Courier New", monospace;
+        color: #ccc;
+        gap: 16px;
+      }
+      h1 {
+        font-size: 16px;
+        color: #fff;
+        letter-spacing: 0.06em;
+      }
+      .subtitle {
+        font-size: 10px;
+        color: #666;
+      }
+      #wrap {
+        display: flex;
+        gap: 24px;
+        align-items: flex-start;
+      }
+      canvas {
+        border: 2px solid #333;
+        border-radius: 4px;
+      }
+      #panel {
+        background: #181818;
+        border: 1px solid #2a2a2a;
+        border-radius: 8px;
+        padding: 14px 16px;
+        width: 220px;
+      }
+      #panel h2 {
+        font-size: 10px;
+        color: #888;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        border-bottom: 1px solid #2a2a2a;
+        padding-bottom: 6px;
+        margin-bottom: 10px;
+      }
+      #panel h3 {
+        font-size: 9px;
+        color: #555;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin: 12px 0 6px;
+      }
+      .li {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 6px;
+        font-size: 10px;
+      }
+      .sw {
+        width: 24px;
+        height: 8px;
+        border-radius: 2px;
+        flex-shrink: 0;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 9px;
+      }
+      th {
+        color: #555;
+        text-align: left;
+        padding: 2px 3px;
+        border-bottom: 1px solid #222;
+      }
+      td {
+        padding: 2px 3px;
+        color: #999;
+        border-bottom: 1px solid #1a1a1a;
+      }
+      td:first-child {
+        color: #6aaeee;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Air Drum — Proto Board Wiring</h1>
+    <p class="subtitle">
+      ESP32-S3 Zero &nbsp;|&nbsp; 16 cols × 63 rows
+      &nbsp;|&nbsp; External 3.3V supply
+    </p>
+    <div id="wrap">
+      <canvas id="c"></canvas>
+      <div id="panel">
+        <h2>Wire Legend</h2>
+        <div id="leg"></div>
+        <h3>Pin Map (config.h)</h3>
+        <table>
+          <tr>
+            <th>GPIO</th>
+            <th>Net</th>
+          </tr>
+          <tr>
+            <td>GPIO 1, 2, 7</td>
+            <td>Buttons (N, P, M)</td>
+          </tr>
+          <tr>
+            <td>GPIO 3</td>
+            <td>Vibe SIG (PWM)</td>
+          </tr>
+          <tr>
+            <td>GPIO 4, 5, 6</td>
+            <td>LEDs (R, G, B)</td>
+          </tr>
+          <tr>
+            <td>GPIO 8</td>
+            <td>I²C SDA</td>
+          </tr>
+          <tr>
+            <td>GPIO 9</td>
+            <td>I²C SCL</td>
+          </tr>
+        </table>
+        <h3>ESP32-S3 Zero (Waveshare)</h3>
+        <table>
+          <tr>
+            <th>Left ↓</th>
+            <th>Right ↓</th>
+          </tr>
+          <tr>
+            <td>5V (BAT IN)</td>
+            <td>TX (GP43)</td>
+          </tr>
+          <tr>
+            <td>GND (BAT IN)</td>
+            <td>RX (GP44)</td>
+          </tr>
+          <tr>
+            <td>3V3</td>
+            <td>GP13</td>
+          </tr>
+          <tr>
+            <td>GP1 (BTN_N)</td>
+            <td>GP12</td>
+          </tr>
+          <tr>
+            <td>GP2 (BTN_P)</td>
+            <td>GP11</td>
+          </tr>
+          <tr>
+            <td>GP3 (VIBE)</td>
+            <td>GP10</td>
+          </tr>
+          <tr>
+            <td>GP4 (LED_R)</td>
+            <td>GP9 (SCL)</td>
+          </tr>
+          <tr>
+            <td>GP5 (LED_G)</td>
+            <td>GP8 (SDA)</td>
+          </tr>
+          <tr>
+            <td>GP6 (LED_B)</td>
+            <td>GP7 (BTN_M)</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+    <script>
+      // ── canvas setup ──────────────────────────────────────────────
+      const COLS = 9,
+        ROWS = 63;
+      const PAD = 26,
+        CW = 34,
+        CH = 26;
+      const W = PAD * 2 + COLS * CW,
+        H = PAD * 2 + ROWS * CH;
+      const cv = document.getElementById("c");
+      cv.width = W;
+      cv.height = H;
+      const g = cv.getContext("2d");
+
+      const x = (c) => PAD + (c - 1) * CW + CW / 2; // col→px (1-based)
+      const y = (r) => PAD + (r - 1) * CH + CH / 2; // row→px (1-based)
+
+      // ── PCB background ────────────────────────────────────────────
+      g.fillStyle = "#2a1800";
+      g.fillRect(0, 0, W, H);
+      // subtle grain
+      for (let i = 0; i < 3000; i++) {
+        g.fillStyle = `rgba(255,200,80,${Math.random() * 0.025})`;
+        g.fillRect(Math.random() * W, Math.random() * H, 1, 1);
+      }
+
+      // ── holes ─────────────────────────────────────────────────────
+      for (let r = 1; r <= ROWS; r++)
+        for (let c = 1; c <= COLS; c++) {
+          g.beginPath();
+          g.arc(x(c), y(r), 2, 0, Math.PI * 2);
+          g.fillStyle = "#0d0d0d";
+          g.fill();
+          g.strokeStyle = "#3d2800";
+          g.lineWidth = 0.4;
+          g.stroke();
+        }
+
+      // ── power rails (col 1 = GND, col 16 = 3V3) ──────────────────
+      // GND rail strip
+      g.fillStyle = "rgba(0,0,0,.4)";
+      g.fillRect(x(1) - 8, y(1) - 8, 16, y(ROWS) - y(1) + 16);
+      g.fillRect(x(16) - 8, y(1) - 8, 16, y(ROWS) - y(1) + 16);
+      g.strokeStyle = "#1a1a1a";
+      g.lineWidth = 8;
+      g.lineCap = "round";
+      g.beginPath();
+      g.moveTo(x(1), y(1));
+      g.lineTo(x(1), y(ROWS));
+      g.stroke();
+      g.strokeStyle = "#aa0000";
+      g.lineWidth = 8;
+      g.beginPath();
+      g.moveTo(x(16), y(1));
+      g.lineTo(x(16), y(ROWS));
+      g.stroke();
+      g.font = "bold 8px monospace";
+      g.textAlign = "center";
+      g.fillStyle = "#444";
+      g.fillText("GND", x(1), y(1) - 12);
+      g.fillStyle = "#880000";
+      g.fillText("3V3", x(16), y(1) - 12);
+
+      // ── helpers ───────────────────────────────────────────────────
+      const dot = (col, row, clr, r = 3.5) => {
+        g.beginPath();
+        g.arc(x(col), y(row), r, 0, Math.PI * 2);
+        g.fillStyle = clr;
+        g.fill();
+      };
+
+      // draw wire: vertical from (c1,r1) to mid row, horizontal to c2, vertical to (c2,r2)
+      // rMid defaults to midpoint; pass explicitly to control routing
+      function wire(c1, r1, c2, r2, clr, rMid) {
+        const rm = rMid !== undefined ? rMid : (r1 + r2) / 2;
+        g.strokeStyle = clr;
+        g.lineWidth = 1.8;
+        g.lineCap = "round";
+        g.lineJoin = "round";
+        g.beginPath();
+        g.moveTo(x(c1), y(r1));
+        g.lineTo(x(c1), y(rm));
+        g.lineTo(x(c2), y(rm));
+        g.lineTo(x(c2), y(r2));
+        g.stroke();
+        dot(c1, r1, clr);
+        dot(c2, r2, clr);
+      }
+      function wireH(c1, c2, row, clr) {
+        g.strokeStyle = clr;
+        g.lineWidth = 1.8;
+        g.lineCap = "round";
+        g.beginPath();
+        g.moveTo(x(c1), y(row));
+        g.lineTo(x(c2), y(row));
+        g.stroke();
+        dot(c1, row, clr);
+        dot(c2, row, clr);
+      }
+      function wireV(col, r1, r2, clr) {
+        g.strokeStyle = clr;
+        g.lineWidth = 1.8;
+        g.lineCap = "round";
+        g.beginPath();
+        g.moveTo(x(col), y(r1));
+        g.lineTo(x(col), y(r2));
+        g.stroke();
+        dot(col, r1, clr);
+        dot(col, r2, clr);
+      }
+      // 3-segment wire: vertical r1→rMid1, horizontal c1→c2, vertical rMid2→r2
+      function wire3(c1, r1, rMid1, c2, rMid2, r2, clr) {
+        g.strokeStyle = clr;
+        g.lineWidth = 1.8;
+        g.lineCap = "round";
+        g.lineJoin = "round";
+        g.beginPath();
+        g.moveTo(x(c1), y(r1));
+        g.lineTo(x(c1), y(rMid1));
+        g.lineTo(x(c2), y(rMid1));
+        g.lineTo(x(c2), y(rMid2));
+        // if rMid1===rMid2 this is just L-shape
+        g.lineTo(x(c2), y(r2));
+        g.stroke();
+        dot(c1, r1, clr);
+        dot(c2, r2, clr);
+      }
+
+      function block(c1, r1, c2, r2, fill, label) {
+        const bx = x(c1) - CW * 0.4,
+          by = y(r1) - CH * 0.4;
+        const bw = x(c2) - x(c1) + CW * 0.8,
+          bh = y(r2) - y(r1) + CH * 0.8;
+        g.fillStyle = fill;
+        g.strokeStyle = "rgba(255,255,255,.2)";
+        g.lineWidth = 1;
+        g.beginPath();
+        g.roundRect(bx, by, bw, bh, 4);
+        g.fill();
+        g.stroke();
+        g.fillStyle = "#fff";
+        g.font = "bold 9px monospace";
+        g.textAlign = "center";
+        g.fillText(label, bx + bw / 2, by + bh / 2 + 3);
+      }
+      function pinLbl(col, row, txt, align = "left") {
+        g.fillStyle = "#bbb";
+        g.font = "7px monospace";
+        g.textAlign = align;
+        g.fillText(txt, x(col) + (align === "left" ? 6 : -6), y(row) + 3);
+      }
+      function resSymbol(col, row, label) {
+        const rx = x(col),
+          ry = y(row);
+        g.fillStyle = "#7a5510";
+        g.fillRect(rx - 9, ry - 4, 18, 8);
+        g.strokeStyle = "#aaa";
+        g.lineWidth = 0.5;
+        g.strokeRect(rx - 9, ry - 4, 18, 8);
+        g.fillStyle = "#fff";
+        g.font = "6px monospace";
+        g.textAlign = "center";
+        g.fillText(label, rx, ry + 2);
+      }
+
+      // ═══ ESP32-S3 ZERO rows 1-9, body cols 2-8 ════════════════
+      block(2, 1, 8, 9, "#1a3560", "ESP32-S3");
+      g.font = "bold 7px monospace";
+      g.fillStyle = "#aaccff";
+      g.textAlign = "center";
+      g.fillText("USB PORT ↑ (SLIM)", x(5), y(1) - 8);
+
+      const LEFT = [
+        { r: 1, lbl: "5V" },
+        { r: 2, lbl: "GND" },
+        { r: 3, lbl: "3V3" },
+        { r: 4, lbl: "GP1 (NEXT)" },
+        { r: 5, lbl: "GP2 (PREV)" },
+        { r: 6, lbl: "GP3 (VIBE)" },
+        { r: 7, lbl: "GP4 (R)" },
+        { r: 8, lbl: "GP5 (G)" },
+        { r: 9, lbl: "GP6 (B)" },
+      ];
+      LEFT.forEach((p) => {
+        dot(2, p.r, "#5a9fdd");
+        pinLbl(2, p.r, p.lbl, "left");
+      });
+
+      const RIGHT = [
+        { r: 1, lbl: "TX" },
+        { r: 2, lbl: "RX" },
+        { r: 3, lbl: "GP13" },
+        { r: 4, lbl: "GP12" },
+        { r: 5, lbl: "GP11" },
+        { r: 6, lbl: "GP10" },
+        { r: 7, lbl: "GP9 (SCL)" },
+        { r: 8, lbl: "GP8 (SDA)" },
+        { r: 9, lbl: "GP7 (MODE)" },
+      ];
+      RIGHT.forEach((p) => {
+        dot(8, p.r, "#5a9fdd");
+        pinLbl(8, p.r, p.lbl, "right");
+      });
+
+      // ESP32 GND (left, row 2) → col 1 rail
+      wireH(1, 2, 2, "#2a2a2a");
+
+      // ═══ RGB LED rows 15-21, cols 13-15 (RIGHT side) ══════════════
+      // LED body
+      block(13, 15, 15, 20, "#2a2a00", "RGB LED");
+      // Anodes at row 21: R@col13, G@col14, B@col15
+      // Cathode at col 12, row 21 → GND rail row 21
+      dot(12, 21, "#333");
+      g.fillStyle = "#777";
+      g.font = "6px monospace";
+      g.textAlign = "center";
+      g.fillText("C−", x(12), y(22));
+      wireH(1, 12, 21, "#2a2a2a"); // cathode → GND
+
+      // Resistors at row 13 (between ESP32 bottom row 11 and LED top row 15)
+      // R@col13, G@col14, B@col15 — each gets its own column, no overlap
+      resSymbol(13, 13, "220Ω");
+      resSymbol(14, 13, "220Ω");
+      resSymbol(15, 13, "220Ω");
+      g.fillStyle = "#888";
+      g.font = "6px monospace";
+      g.textAlign = "center";
+      g.fillText("R", x(13), y(13) - 8);
+      g.fillText("G", x(14), y(13) - 8);
+      g.fillText("B", x(15), y(13) - 8);
+
+      // ── LED_B: GPIO7 (col13,row4) → right to col15 at row4
+      //           → down col15 rows4→12 (resistor top)
+      //           → down col15 rows14→21 (LED B anode)
+      wireH(13, 15, 4, "#3399ff"); // horizontal exit right at row 4
+      wireV(15, 4, 12, "#3399ff"); // down to resistor
+      dot(15, 13, "#3399ff"); // resistor top
+      wireV(15, 14, 21, "#3399ff"); // resistor bottom to LED anode
+      dot(15, 21, "#3399ff");
+      g.fillStyle = "#3399ff";
+      g.font = "6px monospace";
+      g.textAlign = "center";
+      g.fillText("B", x(15), y(22));
+
+      // ── LED_G: GPIO6 (col13,row5) → right to col14 at row5
+      //           → down col14 rows5→12 (resistor top)
+      //           → down col14 rows14→21 (LED G anode)
+      wireH(13, 14, 5, "#33cc33");
+      wireV(14, 5, 12, "#33cc33");
+      dot(14, 13, "#33cc33");
+      wireV(14, 14, 21, "#33cc33");
+      dot(14, 21, "#33cc33");
+      g.fillStyle = "#33cc33";
+      g.font = "6px monospace";
+      g.textAlign = "center";
+      g.fillText("G", x(14), y(22));
+
+      // ── LED_R: GPIO5 (col13,row6) → down col13 rows6→12 (resistor top)
+      //           → down col13 rows14→21 (LED R anode)
+      // col13 rows 6→12: wire passes rows 7-11 which are other ESP32 right pads.
+      // These are separate holes — wire is insulated on board surface, only connects at endpoints.
+      wireV(13, 6, 12, "#ff3333");
+      dot(13, 13, "#ff3333");
+      wireV(13, 14, 21, "#ff3333");
+      dot(13, 21, "#ff3333");
+      g.fillStyle = "#ff3333";
+      g.font = "6px monospace";
+      g.textAlign = "center";
+      g.fillText("R", x(13), y(22));
+
+      // ═══ VIBRATION MODULE rows 23-27, cols 4-7 (LEFT side) ════════
+      block(4, 23, 7, 27, "#3a0f50", "VIBE MOD");
+      // Pins at row 28 (below body)
+      dot(4, 28, "#aa0000"); // VCC
+      dot(5, 28, "#2a2a2a"); // GND
+      dot(6, 28, "#ff00ff"); // SIG
+      g.fillStyle = "#888";
+      g.font = "6px monospace";
+      g.textAlign = "center";
+      g.fillText("VCC", x(4), y(29));
+      g.fillText("GND", x(5), y(29));
+      g.fillText("SIG", x(6), y(29));
+
+      // Vibe VCC (col4,row28) → 3V3 rail via row 22 (above module, clear row)
+      g.strokeStyle = "#aa0000";
+      g.lineWidth = 1.8;
+      g.lineCap = "round";
+      g.lineJoin = "round";
+      g.beginPath();
+      g.moveTo(x(4), y(28));
+      g.lineTo(x(4), y(22));
+      g.lineTo(x(16), y(22));
+      g.stroke();
+      dot(4, 28, "#aa0000");
+      dot(16, 22, "#aa0000");
+
+      // Vibe GND (col5,row28) → GND rail, row 28 horizontal left
+      wireH(1, 5, 28, "#2a2a2a");
+
+      // Vibe SIG (col6,row28) ← GPIO3 (col13,row8)
+      // Route: col13,row8 → left to col11 at row8
+      //        → down col11 rows8→28
+      //        → left col11→col6 at row28
+      // col11 rows8-28: clear (no components in col11 between rows 8-28)
+      // row28 col6→11: SIG wire. GND wire ends at col5. No overlap ✓
+      g.strokeStyle = "#ff00ff";
+      g.lineWidth = 1.8;
+      g.lineCap = "round";
+      g.lineJoin = "round";
+      g.beginPath();
+      g.moveTo(x(13), y(8));
+      g.lineTo(x(11), y(8));
+      g.lineTo(x(11), y(28));
+      g.lineTo(x(6), y(28));
+      g.stroke();
+      dot(13, 8, "#ff00ff");
+      dot(6, 28, "#ff00ff");
+      // ═══ MPU-6050 rows 31-35, cols 4-11 (FAR END) ════════════════
+      block(4, 31, 11, 35, "#1a5c2a", "MPU-6050");
+      // Pins at row 30 (above body)
+      const mpuPins = [
+        { c: 4, lbl: "VCC", clr: "#aa0000" },
+        { c: 5, lbl: "GND", clr: "#2a2a2a" },
+        { c: 6, lbl: "SCL", clr: "#ff8800" },
+        { c: 7, lbl: "SDA", clr: "#ffcc00" },
+        { c: 8, lbl: "AD0", clr: "#2a2a2a" },
+        { c: 9, lbl: "INT", clr: "#444" },
+      ];
+      mpuPins.forEach((p) => {
+        dot(p.c, 30, p.clr);
+        g.fillStyle = "#888";
+        g.font = "6px monospace";
+        g.textAlign = "center";
+        g.fillText(p.lbl, x(p.c), y(30) - 9);
+      });
+
+      // MPU VCC (col4,row30) → 3V3 rail row 30
+      wireH(4, 16, 30, "#aa0000");
+      // MPU GND (col5,row30) → GND rail row 30
+      wireH(1, 5, 30, "#2a2a2a");
+      // MPU AD0 (col8,row30) → GND rail
+      wireH(5, 8, 30, "#2a2a2a");
+
+      // ═══ MPU-6050 SDA/SCL ══════════════════════════════════════
+      // SCL (GP9, row 7 right) → MPU SCL (col 5, row 30)
+      wire(8, 7, 5, 30, "#ff8800");
+      // SDA (GP8, row 8 right) → MPU SDA (col 6, row 30)
+      wire(8, 8, 6, 30, "#ffcc00");
+
+      // ═══ BUTTONS ════════════════════════════════════════════════
+      block(2, 40, 3, 42, "#333", "N");
+      block(5, 40, 6, 42, "#333", "P");
+      block(8, 40, 9, 42, "#333", "M");
+
+      // Button GNDs
+      wireH(1, 2, 43, "#2a2a2a");
+      wireH(1, 5, 43, "#2a2a2a");
+      wireH(1, 8, 43, "#2a2a2a");
+
+      // BTN NEXT (GP1, row 4 left) → col 2, row 40
+      wireV(2, 4, 40, "#00ffff");
+      // BTN PREV (GP2, row 5 left) → col 5, row 40
+      wire(2, 5, 5, 40, "#00ffff");
+      // BTN MODE (GP7, row 9 right) → col 8, row 40
+      wireV(8, 9, 40, "#00ffff");
+
+      // ═══ VIBE SIG (GP3, row 6 left) ═════════════════════════════
+      wire(2, 6, 4, 28, "#ff00ff");
+
+      // ═══ LEDS (GP4, 5, 6 rows 7, 8, 9 left) ══════════════════
+      wireV(4, 7, 12, "#ff3333"); // Red resistor top at row 13
+      wireV(4, 8, 12, "#33cc33"); // Green ...
+      wireV(4, 9, 12, "#3399ff"); // Blue ...
+
+      // ═══ ROW NUMBERS ─────────────────────────────────────────────
+      g.fillStyle = "#3a3a3a";
+      g.font = "7px monospace";
+      g.textAlign = "right";
+      for (let r = 1; r <= ROWS; r += 5) g.fillText(r, PAD - 5, y(r) + 3);
+      g.textAlign = "center";
+      for (let c = 1; c <= COLS; c++) g.fillText(c, x(c), PAD - 8);
+
+      // ═══ ZONE BADGES ─────────────────────────────────────────────
+      const badge = (col, row, txt) => {
+        const bx = x(col) - 18,
+          by = y(row) - 9;
+        g.fillStyle = "rgba(255,200,60,.12)";
+        g.fillRect(bx, by, 36, 18);
+        g.strokeStyle = "rgba(255,200,60,.25)";
+        g.lineWidth = 0.5;
+        g.strokeRect(bx, by, 36, 18);
+        g.fillStyle = "rgba(255,200,60,.5)";
+        g.font = "bold 7px monospace";
+        g.textAlign = "center";
+        g.fillText(txt, x(col), y(row) + 3);
+      };
+      badge(14.5, 1, "PWR");
+      badge(14.5, 7.5, "MCU");
+      badge(14.5, 17, "LED");
+      badge(14.5, 25, "VIBE");
+      badge(14.5, 33, "IMU");
+
+      // ═══ LEGEND HTML ─────────────────────────────────────────────
+      const LD = [
+        { c: "#2a2a2a", l: "GND" },
+        { c: "#aa0000", l: "3.3V" },
+        { c: "#ff8800", l: "I²C SCL — GPIO9" },
+        { c: "#ffcc00", l: "I²C SDA — GPIO8" },
+        { c: "#ff00ff", l: "Vibe SIG — GPIO3" },
+        { c: "#ff3333", l: "LED Red — GPIO4" },
+        { c: "#33cc33", l: "LED Green — GPIO5" },
+        { c: "#3399ff", l: "LED Blue — GPIO6" },
+        { c: "#00ffff", l: "Buttons — GPIO 1, 2, 7" },
+      ];
+      document.getElementById("leg").innerHTML = LD.map(
+        (d) =>
+          `<div class="li"><div class="sw" style="background:${d.c}"></div><span>${d.l}</span></div>`,
+      ).join("");
+    </script>
+  </body>
+</html>
